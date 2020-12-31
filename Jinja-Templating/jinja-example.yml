@@ -1,0 +1,65 @@
+---
+
+- name: Data Manipulation
+  hosts: localhost
+  gather_facts: false
+  vars:
+    my_name: Deepak Prasad
+    my_list: [1,2,3,4,5,6,5,3,7,1,9]
+    first_name: Deepak
+    path1: "/opt/custom/data/bin/script.sh"
+    path2: 'C:\Users\deeprasa\PycharmProjects\elasticsearch\test.log'
+    path3: "~/jinja2_temp_5.yml"
+    mydate1: "2020-08-14 20:00:00"
+    mydate2: "2018-08-15 21:01:40"
+  
+  tasks:
+  
+  - name: Print message
+    debug:
+      msg: "My name is {{ my_name }}"
+
+  - name: Display filters
+    debug:
+      msg:
+       - "My name is {{ my_name }}"
+       - "My name is {{ my_name | lower }}"
+       - "My name is {{ my_name | upper }}"
+       - "My name is {{ my_name | capitalize }}"
+       - "My name is {{ my_name | title }}"
+
+  - name: use default variables 
+    debug:
+      msg:
+       - "My name is {{ first_name }} {{ last_name | default('Prasad') }}"
+
+  - name: List and Set
+    debug:
+      msg:
+        - "The highest no {{ my_list | max }}"
+        - "The lowest no is {{ my_list | min }}"
+        - "Print only unique values {{ my_list | unique }}"
+        - "Print random no {{ my_list | random }}"
+        - "Join the values of list {{ my_list | join('-') }}"
+
+  - name: filters to work on pathnames
+    debug:
+      msg:
+       - "Linux Path: {{ path1 | dirname }}"
+       - "Windows Path: {{ path2 | win_dirname }}"
+       - "Linux script name: {{ path1 | basename }}"
+       - "Split the path: {{ path2 | win_splitdrive }}"
+       - "Windows Drive: {{ path2 | win_splitdrive | first }}"
+       - "Windows File name: {{ path2 | win_splitdrive | last }}"
+       - "Show Full path: {{ path3 | expanduser }}"
+
+  - name: Date and time filters
+    debug:
+      msg:
+       - "Today's date: {{ '%d-%m-%Y' | strftime }}"
+       - "Today's date and time: {{ '%d-%m-%Y %H:%M:%S' | strftime }}"
+       - "Print seconds since {{ mydate1 }}: {{ ((mydate2 | to_datetime) - (mydate1 | to_datetime)).seconds }}"
+       - "Print days since {{ mydate2 }}: {{ ((mydate2 | to_datetime) - (mydate1 | to_datetime)).days }}"
+
+ 
+

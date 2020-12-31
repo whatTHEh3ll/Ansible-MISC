@@ -1,0 +1,43 @@
+---
+- hosts: all 
+  become: true
+  remote_user: root
+  gather_facts: True
+  vars:
+    user_name: vagrant 
+
+  tasks:
+    
+    - name: Install Packages needed to create random password
+      apt:
+        name:
+          - pwgen
+          - secure-delete
+    
+    - name: Generate password
+      shell: pwgen -N 1 -s -y 9
+      register: mypass
+    
+    - debug:
+        msg: "The password is {{ mypass.stdout }}"
+
+    - name: copy mypass variable to a local file
+      copy:
+        content: "{{ mypass }}"
+        dest: /tmp/{{ ansible_date_time.date }}-password.txt
+        mode: 755
+        
+    - name: copy {{ ansible_date_time.date }}-password.txt to local machine
+      fetch:
+        src: /tmp/{{ ansible_date_time.date }}-password.txt 
+        dest: "{{ playbook_dir }}"
+
+    - name: delete copy {{ user_name }}-{{ ansible_date_time.date }}-password.txt from home directory
+      shell: srm -vz {{ user_name }}-{{ ansible_date_time.date }}-password.txt 
+      args:
+        chdir: /tmp 
+      register: erasing
+
+    - debug:
+        msg: "{{ erasing.stdout }}"
+

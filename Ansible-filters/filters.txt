@@ -1,0 +1,49 @@
+ansible -m setup all -i inventory/hosts -u root > facts-vagrant.txt
+
+ansible -m setup all -i inventory/hostsDO -u root > facts-DO.txt
+
+
+ansible-playbook facts.yml -i inventory/hosts -u root 
+ansible-playbook facts.yml -i inventory/hostsDO -u root 
+
+# Display facts from all hosts and store them indexed by I(hostname) at C(/tmp/facts).
+# ansible all -m setup --tree /tmp/facts
+
+# Display only facts regarding memory found by ansible on all hosts and output them.
+# ansible all -m setup -a 'filter=ansible_*_mb'
+
+# Display only facts returned by facter.
+# ansible all -m setup -a 'filter=facter_*'
+
+# Collect only facts returned by facter.
+# ansible all -m setup -a 'gather_subset=!all,!any,facter'
+
+- name: Collect only facts returned by facter
+  setup:
+    gather_subset:
+      - '!all'
+      - '!any'
+      - facter
+
+# Display only facts about certain interfaces.
+ansible all -m setup -a 'filter=ansible_eth[0-2]' -i ../inventory/vagrant/hosts -u root
+
+ansible all -m setup -a 'filter=partitions' -i ../inventory/vagrant/hosts -u root
+
+# Restrict additional gathered facts to network and virtual (includes default minimum facts)
+# ansible all -m setup -a 'gather_subset=network,virtual'
+
+# Collect only network and virtual (excludes default minimum facts)
+ansible all -m setup -a 'gather_subset=!all,!any,network,virtual' -i inventory/hosts -u root
+
+# Do not call puppet facter or ohai even if present.
+# ansible all -m setup -a 'gather_subset=!facter,!ohai'
+
+# Only collect the default minimum amount of facts:
+# ansible all -m setup -a 'gather_subset=!all'
+
+# Collect no facts, even the default minimum subset of facts:
+# ansible all -m setup -a 'gather_subset=!all,!min'
+
+# Display facts from Windows hosts with custom facts stored in C(C:\custom_facts).
+# ansible windows -m setup -a "fact_path='c:\custom_facts'"

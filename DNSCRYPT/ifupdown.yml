@@ -1,0 +1,122 @@
+---
+- hosts: vagrant
+  vars:
+    user_name: root 
+
+  tasks:
+
+  - name: 'install ifupdown'
+    apt:
+      name: ifupdown
+      update_cache: yes
+    tags: ifupdown
+
+  - name: 'copy interfaces.js file to /etc/network/interfaces'
+    become: yes 
+    template:
+      src: interfaces.j2
+      dest: /etc/network/interfaces
+      owner: root 
+      group: root 
+      mode: 0644
+    tags: interfaces
+
+  - name: 'reboot machine to make changes to /etc/network/interfaces'
+    reboot:
+      reboot_timeout: 300
+    tags: reboot1
+
+  - name: 'check uptime after changing /etc/network/interfaces'
+    shell: uptime
+    register: UPTIME_POST_REBOOT
+  
+  - debug: msg={{UPTIME_POST_REBOOT.stdout}}
+    
+  - name: 'unmask networking service'
+    become: yes 
+    systemd:
+      masked: no 
+      name: networking 
+    tags: unmask
+
+  - name: 'enable networking service'
+    become: yes 
+    systemd:
+      name: networking
+      enabled: yes 
+    tags: enable
+
+  - name: 'restart networking service'
+    become: yes
+    service:
+      name: networking
+      state: restarted
+      daemon_reload: yes
+    tags: restart
+
+  - name: 'stop systemd-networkd.socket, systemd-networkd, networkd-dispatcher, systemd-networkd-wait-online'
+    become: yes
+    systemd:
+      name: "{{ item }}"
+      state: stopped
+    with_items:
+      - 'systemd-networkd.socket'
+      - 'systemd-networkd'
+      - 'networkd-dispatcher'
+      - 'systemd-networkd-wait-online'
+    tags: stopped
+
+  - name: 'disable systemd-networkd.socket systemd-networkd networkd-dispatcher'
+    become: yes 
+    systemd:
+      name: "{{ item }}"
+      enabled: no 
+    with_items:
+      - 'systemd-networkd.socket'
+      - 'systemd-networkd'
+      - 'networkd-dispatcher'
+    tags: disable2
+
+  - name: 'mask systemd-networkd.socket systemd-networkd networkd-dispatcher systemd-networkd-wait-online'
+    become: yes 
+    systemd:
+      name: "{{ item }}"
+      masked: yes
+    with_items:
+      - 'systemd-networkd.socket'
+      - 'systemd-networkd'
+      - 'networkd-dispatcher'
+      - 'systemd-networkd-wait-online'
+    tags: mask
+
+  - name: 'purge netplan package'
+    apt:
+      name: netplan.io
+      state: absent
+      purge: yes 
+    tags: netplan
+            
+  - name: 'reboot machine after removing netplan'
+    reboot:
+      reboot_timeout: 300
+            
+  - name: 'check uptime after removing netplan'
+    shell: uptime
+    register: UPTIME_POST_REBOOT
+
+  - debug: msg={{UPTIME_POST_REBOOT.stdout}}
+
+  - name: Remove /usr/share/netplan directory
+    become: yes
+    file:
+      path: /usr/share/netplan
+      state: absent
+    tags: remove1
+
+  - name: Remove /usr/share/netplan directory
+    become: yes
+    file:
+      path: /usr/share/netplan
+      state: absent
+    tags: remove2 
+       

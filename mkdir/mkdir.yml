@@ -1,0 +1,22 @@
+- name: create a directory with current time
+  hosts: localhost
+  gather_facts: false
+  vars:
+    user_name: coney
+    target: website.com
+  
+  tasks:
+
+  - name: register date and time
+    shell: date +"%m_%d_%Y_%r"
+    register: time
+
+  - debug:
+      var: time.stdout
+
+  - name: create directory
+    file:
+      path: /home/{{ user_name }}/{{ target }}-{{ time.stdout }}
+      state: directory
+
+  

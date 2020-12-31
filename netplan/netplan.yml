@@ -1,0 +1,61 @@
+---
+- hosts: do
+  vars:
+    user_name: root 
+
+  tasks:
+
+  - name: 'netplan : get ip address to whitelist'
+    local_action: shell curl -s https://ipinfo.io/ip
+    register: my_ip
+    tags: ip
+
+  - debug:
+      var: my_ip.stdout 
+    tags: variable
+    
+  - name: 'netplan : write {{ my_ip.stdout }} to file'
+    local_action: 'copy content={{ my_ip.stdout }} dest=/{{ playbook_dir }}/public-ip.txt'
+    tags: write 
+
+  - name: 'netplan : apply jinja templating to netplan 50-cloud.init.yaml'
+    template:
+      src: config/50-cloud-init.j2
+      dest: '{{ playbook_dir }}/50-cloud-init.yaml'
+      force: yes 
+    delegate_to: localhost
+    tags: template
+
+  - name: 'netplan : copy 50-cloud.init.yaml to /etc/netplan directory'
+    become: yes
+    copy:
+      src: '{{ playbook_dir }}/50-cloud-init.yaml'
+      dest: /etc/netplan/
+      force: yes
+      owner: root
+      group: root
+      mode: 0644
+    tags: remote-copy 
+
+  - name: 'netplan : copy 99-disable-network-config.cfg'
+    become: yes
+    copy:
+      src: config/99-disable-network-config.cfg
+      dest: /etc/cloud/cloud.cfg.d/
+
+  - name: 'netplan : Apply netplan'
+    become: yes 
+    shell: sudo netplan apply
+    ignore_errors: true
+    register: apply
+    tags: apply 
+
+  - debug: 
+      msg: "{{ apply.stdout }}"
+
+  - name: 'netplan : delete 50-cloud-init.yaml locally'
+    file:
+      path: '{{ playbook_dir }}/50-cloud-init.yaml'
+      state: absent
+    delegate_to: localhost
+      

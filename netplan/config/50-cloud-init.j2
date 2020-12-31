@@ -1,0 +1,14 @@
+network:
+    version: 2
+    ethernets:
+      {{ ansible_default_ipv4.interface }}:
+        addresses:
+          - {{ ansible_default_ipv4.address }}/{{ (ansible_default_ipv4.address + '/' + ansible_default_ipv4.netmask) | ipaddr('prefix') }}
+        gateway4: {{ ansible_default_ipv4.gateway }}
+        nameservers:
+            addresses: [127.0.2.1]
+        routes:
+          # public ip of ssh client
+        - to: {{ my_ip.stdout }}
+          # gateway of REMOTE SERVER below
+          via: {{ ansible_default_ipv4.gateway }}

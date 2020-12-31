@@ -1,0 +1,96 @@
+---
+- hosts: all
+  vars:
+    user_name: vagrant 
+            
+  tasks:
+
+  - name: Update apt-get repo and cache
+    apt:
+      update_cache: yes
+    tags: update
+   
+  - name: Update all packages to the latest version
+    apt:
+      upgrade: dist 
+    tags: upgrade
+
+  - name: 'add transmission repo'
+    apt_repository:
+      repo: ppa:transmissionbt/ppa
+    tags: repo  
+
+  - name: install tranmsision packages  
+    become: true
+    apt:
+      name: 
+        - transmission-cli
+        - transmission-common
+        - transmission-daemon
+    tags: transmission
+
+  - name: 'stop transmission-daemon'
+    become: yes
+    systemd:
+      state: stopped
+      name: transmission-daemon
+    tags: stopped
+
+  - name: get ip address to whitelist
+    local_action: shell curl -s https://ipinfo.io/ip
+    register: my_ip
+    tags: ip
+
+  - debug:
+      var: my_ip.stdout 
+    tags: variable
+
+  - local_action: copy content={{ my_ip.stdout }} dest=/{{ playbook_dir }}/public-ip.txt
+    tags: write 
+
+  - name: use template module locally for {{ my_ip.stdout }}
+    template:
+      src: config/settings-copy.j2
+      dest: config/settings.json
+    delegate_to: localhost
+    tags: template
+
+  - name: copy settings.json to /etc/transmission-daemon/
+    become: yes
+    copy: 
+      src: config/settings.json
+      dest: /etc/transmission-daemon/
+      force: yes
+      owner: root
+      group: root
+      mode: 0644
+    tags: settings
+
+  - name: 'add {{ user_name }} to transmission-daemon'
+    become: yes
+    user:
+      name: "{{ user_name }}"
+      groups: debian-transmission
+      append: yes
+    tags: groups 
+
+  - name: create downloads directory 
+    file:
+      path: /home/{{ user_name }}/downloads
+      state: directory
+    tags: downloads 
+
+  - name: create symbolic link for 
+    become: yes
+    shell: sudo ln -s /var/lib/transmission/downloads /home/"{{ user_name | quote }}"/downloads
+    args:
+      warn: no
+    tags: link
+
+  - name: 'start transmission-daemon'
+    become: yes
+    systemd:
+      state: started
+      name: transmission-daemon
+    tags: started 
+

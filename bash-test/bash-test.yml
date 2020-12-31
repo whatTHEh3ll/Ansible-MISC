@@ -1,0 +1,36 @@
+- hosts: vagrant 
+  vars:
+    user_name: vagrant
+
+  tasks:
+  
+  - name: Test Interactive Bash Failure
+    shell: ta
+    ignore_errors: True
+
+  - name: Test Interactive Bash Using Source
+    shell: source ~/.bash_aliases && ta
+    args:
+      executable: /bin/bash
+    ignore_errors: yes
+
+  - name: Test Interactive Bash Using .
+    shell: . ~/.bash_aliases && ta
+    ignore_errors: yes
+
+  - name: Test Interactive Bash Using /bin/bash -ci
+    shell: /bin/bash -ic 'ta'
+    register: result
+    ignore_errors: yes
+
+  - debug: msg="{{ result }}"
+
+  - name: Test Interactive Bash Using sudo -ui
+    shell: sudo -ui hearen ta
+    register: result
+    ignore_errors: yes
+
+  - name: Test Interactive Bash Using ssh -tt localhost /bin/bash -ci
+    shell: ssh -tt localhost /bin/bash -ci 'ta'
+    register: result
+    ignore_errors: yes
