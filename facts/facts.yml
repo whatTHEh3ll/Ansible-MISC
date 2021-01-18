@@ -1,15 +1,19 @@
 ---
 
-- hosts: localhost
+- hosts: all
   gather_facts: true
   tasks:
 
     - set_fact:
         cidr: "{{ (ansible_default_ipv4.address + '/' + ansible_default_ipv4.netmask) | ipaddr('prefix') }}"
 
-    - name: hostname
+    - name: Ansible hostname
       debug:
         msg: "{{ ansible_hostname }}"
+
+    - name: Inventory hostname
+      debug:
+        msg: "{{ inventory_hostname }}"
 
     - name: ip address
       debug:

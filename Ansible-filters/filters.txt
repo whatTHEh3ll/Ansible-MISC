@@ -1,10 +1,14 @@
-ansible -m setup all -i inventory/hosts -u root > facts-vagrant.txt
 
-ansible -m setup all -i inventory/hostsDO -u root > facts-DO.txt
+ansible all -m setup -i hosts.ini -u root
+
+ansible all -m setup -a 'filter=ansible_default_ipv4.address|default(ansible_all_ipv4_addresses[0])' -i hosts.ini -u root 
+
+ansible all -m setup -a 'filter= ansible_default_ipv4.address' -i hosts.ini -u root 
+
+ansible_default_ipv4.address|default(ansible_all_ipv4_addresses[0])
 
 
-ansible-playbook facts.yml -i inventory/hosts -u root 
-ansible-playbook facts.yml -i inventory/hostsDO -u root 
+
 
 # Display facts from all hosts and store them indexed by I(hostname) at C(/tmp/facts).
 # ansible all -m setup --tree /tmp/facts

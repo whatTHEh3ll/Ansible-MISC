@@ -1,0 +1,23 @@
+---
+
+- hosts: all
+  gather_facts: yes
+  
+  tasks:
+
+    - name: Gather facts from new server
+      setup:
+        filter: ansible_default_ipv4.address
+
+    - name: Gather facts from new server second time
+      setup:
+        filter: ansible_default_ipv4.address|default(ansible_all_ipv4_addresses[0])
+        
+    - debug: var=hostvars[inventory_hostname]['ansible_env'].SSH_CONNECTION.split(' ')[2]
+    - debug: var=hostvars[inventory_hostname]['ansible_default_ipv4']['address']
+    - debug: var=hostvars[inventory_hostname]['ansible_default_ipv6']['address']
+    - debug: var=ansible_enp0s3.ipv4.address
+    # Getting the IP address of eth0 interface
+    - debug: var=ansible_eth0.ipv4.address
+
+  
