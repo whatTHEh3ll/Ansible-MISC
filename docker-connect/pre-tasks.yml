@@ -1,0 +1,28 @@
+---
+- hosts: remote
+  #become: yes
+
+  pre_tasks:
+    
+    - raw: apt-get update -y
+      register: system_output
+
+    - raw: apt-get -y install python3
+      register: py_3_output
+
+
+  tasks:
+
+    - debug: 
+        var=system_output.stdout_lines
+
+    - debug: 
+        var=py_3_output.stdout_lines
+    
+    - name: get Python version
+      shell: python3 --version 2>&1
+      register: py_output
+    
+    - debug: 
+        var=py_output.stdout_lines
+ 
