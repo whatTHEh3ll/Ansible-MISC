@@ -4,17 +4,13 @@
   hosts: localhost
   gather_facts: true
     
-  vars:
-    password_length: 12
-    password_specs:
-    - digits
-    - ascii_lowercase
-    - ascii_uppercase
-    - punctuation
-  
   tasks:
+
+  - name: Include pass_vars file
+    include_vars: 
+      file: password_vars.yml
   
-  - name: House keeping stuff
+  - name: set facts for random password
     set_fact:
       remaining_password_length: "{{ password_length -  password_specs | length }}"
       password_spec_str: "{{ password_specs | join(',') }}"  
@@ -27,3 +23,24 @@
   - name: Create required length of password
     debug:
       msg: "{{ pwd_pool | join('') + lookup('password', '/dev/null length=' ~ remaining_password_length ~ ' chars=' ~ password_spec_str )}}"
+
+  - name: create pass_vault.yml file
+    copy:
+      content: "Vault password:"
+      dest: "vars/pass_vault.yml"
+
+  - name: write password to file                                                                              
+    blockinfile:
+      dest: vars/pass_vault.yml
+      marker: ""
+      block: |                                                                                             
+        my_password: {{ pwd_pool | join('') + lookup('password', '/dev/null length=' ~ remaining_password_length ~ ' chars=' ~ password_spec_str )}}
+      insertafter: "Vault password:"
+      state: present 
+
+  - name: Remove blank lines blockinfile put in
+    lineinfile :
+      path: vars/pass_vault.yml
+      state: absent
+      regexp: '^$'
+      

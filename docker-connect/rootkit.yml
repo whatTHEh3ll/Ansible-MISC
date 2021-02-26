@@ -1,0 +1,64 @@
+---
+- hosts: remote
+  #become: yes
+
+  pre_tasks:
+    
+    - raw: apt-get update -y
+      register: system_output
+
+    - raw: apt-get -y install python3
+      register: py_3_output
+
+
+  tasks:
+
+    - debug: 
+        var=system_output.stdout_lines
+
+    - debug: 
+        var=py_3_output.stdout_lines
+    
+    - name: get Python version
+      shell: python3 --version 2>&1
+      register: py_output
+    
+    - debug: 
+        var=py_output.stdout_lines
+
+    - name: install debconf-utils
+      #become: yes
+      package:
+        name: debconf-utils
+        state: latest
+        # python3-apt
+
+    - name: install rootkit protection
+      #become: true
+      apt:
+        name:
+          - rkhunter
+          - chkrootkit
+
+    - name: reconfigure rkhunter with debconf
+      debconf:
+        name: rkhunter
+        question: "{{ item }}"
+        value: true
+        vtype: boolean
+      with_items:
+        - rkhunter/apt_autogen 
+        - rkhunter/cron_db_update
+        - rkhunter/cron_daily_run
+        
+    - name: reconfigure chkrootkit with debconf
+      debconf:
+        name: chkrootkit
+        question: "{{ item.question }}"
+        value: "{{ item.value }}"
+        vtype: "{{ item.vtype }}"
+      loop:
+        - {question: 'chkrootkit/diff_mode', value: 'true', vtype: 'boolean'}
+        - {question: 'chkrootkit/run_daily', value: 'true', vtype: 'boolean'}
+        - {question: 'chkrootkit/run_daily_opts', value: '-q', vtype: 'string'}
+

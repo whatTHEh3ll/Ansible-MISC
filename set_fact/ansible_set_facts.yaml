@@ -1,0 +1,19 @@
+---
+- hosts: localhost
+
+  tasks:
+
+    - name: Here we are using set_fact to set variables 
+      set_fact:
+        file1: test1.txt 
+        file2: test2.ini 
+        file3: test3.txt
+
+    - name: Here we use file module to create files with variable values as names 
+      file:
+        path: "{{ item }}"
+        state: touch 
+      with_items:
+        - "{{ file1 }}"
+        - "{{ file2 }}"
+        - "{{ file3 }}"

@@ -1,0 +1,21 @@
+---
+
+- name: upload content to dropbox via rclone
+  hosts: localhost
+  gather_facts: true
+
+  tasks:
+
+  - name: download system-{{ ansible_hostname }}-{{ inventory_hostname }}.zip
+    expect:
+      command: rclone copy --progress dropbox:/Ansible/system-{{ ansible_hostname }}-{{ inventory_hostname }}.zip {{ playbook_dir }}/downloads
+      responses:
+        password: b5$mb&2qAzx3n8M
+
+  - name: unarchive system-{{ ansible_hostname }}-{{ inventory_hostname }}.zip
+    unarchive:
+      src: "{{ playbook_dir }}/downloads/system-{{ ansible_hostname }}-{{ inventory_hostname }}.zip"
+      dest: "{{ playbook_dir }}/downloads/system-{{ ansible_hostname }}-{{ inventory_hostname }}/{{ directory }}"
+      mode: 0755
+    
+

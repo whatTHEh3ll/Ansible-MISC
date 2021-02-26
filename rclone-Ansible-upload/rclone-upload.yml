@@ -1,0 +1,96 @@
+---
+
+- name: upload content to dropbox via rclone
+  hosts: localhost
+  gather_facts: true
+
+  tasks:
+
+  - name: register date and time
+    shell: date +"%m_%d_%Y_%r"
+    register: time
+
+  - debug:
+      msg: time.stdout
+
+  - debug:
+      msg: system-{{ ansible_hostname }}-{{ inventory_hostname }}-{{ time.stdout }}
+
+  - name: set fact for system-{{ ansible_hostname }}-{{ inventory_hostname }}-{{ time.stdout }}
+    set_fact:
+      directory: system-{{ ansible_hostname }}-{{ inventory_hostname }}-{{ time.stdout }}
+      cacheable: yes
+
+  - name: create {{ directory }} using custom fact
+    file:
+      path: "{{ playbook_dir }}/uploads/{{ directory }}"
+      state: directory
+      mode: 0755
+
+  - name: add file displaying system facts to {{ directory }} using copy module
+    copy:
+      dest: "{{ playbook_dir }}/uploads/{{ directory }}/{{ directory }}-facts.txt"
+      content: |
+        {{ ansible_hostname }}
+        {{ inventory_hostname }}
+        {{ ansible_default_ipv4.address }}
+        {{ ansible_hostname }}
+      mode: 0755
+
+  - name: add file displaying system facts to {{ directory }} using copy module
+    copy:
+      dest: "{{ playbook_dir }}/uploads/{{ directory }}/{{ directory }}-more-facts.txt"
+      content: |
+        {{ ansible_distribution }}
+        {{ ansible_distribution_release }}
+        {{ ansible_distribution_version }}
+      mode: 0755
+
+  - name: add file displaying system facts to {{ directory }} using copy module
+    copy:
+      dest: "{{ playbook_dir }}/uploads/{{ directory }}/{{ directory }}-even-more-facts.txt"
+      content: |
+        {{ ansible_env.HOME }}
+        {{ ansible_processor }}
+        {{ ansible_processor_count }}
+        {{ ansible_processor_cores }}
+        {{ ansible_processor_threads_per_core }}
+        {{ ansible_processor_vcpus }}
+      mode: 0755
+
+  - name: Archives the files and folders in {{ directory }}
+    archive:
+      path: "{{ playbook_dir }}/uploads/{{ directory }}/*"
+      dest: "{{ playbook_dir }}/uploads/system-{{ ansible_hostname }}-{{ inventory_hostname }}.zip"
+      format: zip
+      remove: yes
+
+  - name: Include pass_vault variable
+    include_vars: 
+      file: pass_vault.yml
+
+  - name: upload system-{{ ansible_hostname }}-{{ inventory_hostname }}.zip to dropbox
+    expect:
+      command: rclone copy --progress {{ playbook_dir }}/uploads/system-{{ ansible_hostname }}-{{ inventory_hostname }}.zip dropbox:/Ansible
+      responses:
+        password: "{{ my_password }}"
+
+  - name: download system-{{ ansible_hostname }}-{{ inventory_hostname }}.zip
+    expect:
+      command: rclone copy --progress dropbox:/Ansible/system-{{ ansible_hostname }}-{{ inventory_hostname }}.zip {{ playbook_dir }}/downloads
+      responses:
+        password: "{{ my_password }}"
+
+  - name: unarchive system-{{ ansible_hostname }}-{{ inventory_hostname }}.zip
+    unarchive:
+      src: "{{ playbook_dir }}/downloads/system-{{ ansible_hostname }}-{{ inventory_hostname }}.zip"
+      dest: "{{ playbook_dir }}/downloads/"
+      mode: 0755
+
+        
+     
+
+ 
+    
+
+  

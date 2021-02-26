@@ -1,0 +1,3 @@
+* chkrootkit/run_daily_opts: -q
+* chkrootkit/diff_mode: true
+* chkrootkit/run_daily: true
