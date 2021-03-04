@@ -1,0 +1,14 @@
+---
+- hosts: all 
+  gather_facts: true
+  
+  tasks:
+  
+  - name: Here we are using set_fact module. 
+    set_fact:
+      file_name: sample.txt
+  
+  - name: Here we are using file module  
+    file:
+      path: "{{ file_name }}"
+      state: touch

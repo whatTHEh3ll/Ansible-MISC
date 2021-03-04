@@ -1,0 +1,93 @@
+---
+
+- hosts: all
+  gather_facts: true
+  vars:
+    user_name: coney
+
+
+  pre_tasks:
+
+    - raw: sudo apt install -y secure-delete
+
+    - raw: sudo apt install -y colorized-logs
+    
+  tasks:
+
+  - name: register date and time
+    shell: date +"%m_%d_%Y_%r"
+    register: time
+
+  - debug:
+      msg: time.stdout
+
+  - debug:
+      msg: system-{{ ansible_hostname }}-{{ inventory_hostname }}-{{ time.stdout }}
+
+  - name: set fact for system-{{ ansible_hostname }}-{{ inventory_hostname }}-{{ time.stdout }}
+    set_fact:
+      directory: system-{{ ansible_hostname }}-{{ inventory_hostname }}-{{ time.stdout }}
+      cacheable: yes
+
+  - name: create {{ directory }} using custom fact
+    file:
+      path: "/home/{{ user_name }}/{{ directory }}"
+      state: directory
+
+  - name: download lynis archive from https://github.com/CISOfy/lynis/archive/master
+    get_url:
+      url: https://github.com/CISOfy/lynis/archive/master.zip
+      dest: /home/{{ user_name }}/master.zip
+      
+  - name: unzip lynis archive 
+    unarchive:
+      src: /home/{{ user_name }}/master.zip
+      dest: /home/{{ user_name }}
+      
+  - name: Change permisions for lynis directory
+    become: yes
+    file:
+      path: /home/{{ user_name }}/lynis-master
+      state: directory
+      recurse: yes
+      owner: root
+      group: root
+  
+  - name: run lynis and write RAW output to "{{ directory }}"
+    become: yes
+    shell: ./lynis audit system > '/home/{{ user_name }}/{{ directory }}/RAW-lynis-output.txt'
+    args:
+      chdir: /home/{{ user_name }}/lynis-master
+    register: lynis
+
+  - debug:
+      msg: "{{ lynis.stdout }}"
+    
+  - name: format RAW lynis output
+    become: yes 
+    shell: "{{ item }}"
+    args:
+      chdir: /home/{{ user_name }}/{{ directory }}
+    with_items:
+      - cat RAW-lynis-output.txt | ansi2txt > '{{ directory }}-LYNIS.txt'
+      - srm -vz RAW-lynis-output.txt
+
+  - name: Change file ownership, group and permissions
+    become: yes 
+    file:
+      path: /home/{{ user_name }}/{{ directory }}/{{ directory }}-LYNIS.txt
+      owner: "{{ user_name }}"
+      group: "{{ user_name }}"
+
+  - name: delete files recursively
+    become: yes
+    shell: srm -rvz /home/{{ user_name | quote }}/lynis-master
+    
+     
+    
+
+      
+
+  
+
+

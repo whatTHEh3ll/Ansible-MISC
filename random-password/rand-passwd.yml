@@ -6,6 +6,13 @@
     
   tasks:
 
+  - name: register date and time
+    shell: date +"%m_%d_%Y_%r"
+    register: passwd_time
+    
+  - debug:
+      msg: passwd_time.stdout
+
   - name: Include pass_vars file
     include_vars: 
       file: password_vars.yml
@@ -28,6 +35,16 @@
     copy:
       content: "Vault password:"
       dest: "vars/pass_vault.yml"
+      force: yes
+
+  - name: write password to file                                                                              
+    blockinfile:
+      dest: vars/pass_vault.yml
+      marker: ""
+      block: |                                                                                             
+        #{{ passwd_time.stdout }}
+      insertafter: "Vault password:"
+      state: present 
 
   - name: write password to file                                                                              
     blockinfile:
@@ -35,7 +52,7 @@
       marker: ""
       block: |                                                                                             
         my_password: {{ pwd_pool | join('') + lookup('password', '/dev/null length=' ~ remaining_password_length ~ ' chars=' ~ password_spec_str )}}
-      insertafter: "Vault password:"
+      insertafter: "#{{ passwd_time.stdout }}"
       state: present 
 
   - name: Remove blank lines blockinfile put in

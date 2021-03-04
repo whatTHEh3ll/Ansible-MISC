@@ -1,0 +1,43 @@
+---
+
+- hosts: all
+  gather_facts: true
+
+  tasks:
+
+  - name: register date and time
+    shell: date +"%m_%d_%Y_%r"
+    register: lookup_time
+    
+  - debug:
+      msg: lookup_time.stdout
+
+  - name: here we will display contents of myfolder/content
+    debug:
+      msg: These are the contents of myfolder/content - {{ lookup('file', 'myfolder/content.txt') }}
+
+  - name: Here we are using set_fact module. 
+    set_fact:
+      text: "{{ lookup('file', 'myfolder/content.txt') }}"
+
+  - name: create text_vars.yml file
+    copy:
+      dest: text_vars.yml
+      content: |
+        ---
+        content: {{ text }}
+        #{{ lookup_time.stdout }}
+      force: yes
+
+  - name: include text_vars.yml
+    include_vars:
+      file: "text_vars.yml"
+
+  - debug:
+      msg: "{{ content }}"
+
+    
+
+
+
+ 

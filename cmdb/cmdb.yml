@@ -1,0 +1,46 @@
+- name: create a directory with current time and run ansible-cmdb
+  hosts: localhost
+  gather_facts: true
+ 
+  tasks:
+
+  - name: register date and time
+    shell: date +"%m_%d_%Y_%r"
+    register: time
+
+  - debug:
+      msg: time.stdout
+
+  - debug:
+      msg: system-{{ ansible_hostname }}-{{ inventory_hostname }}-{{ time.stdout }}
+
+  - name: set fact for system-{{ ansible_hostname }}-{{ inventory_hostname }}-{{ time.stdout }}
+    set_fact:
+      directory: system-{{ ansible_hostname }}-{{ inventory_hostname }}-{{ time.stdout }}
+      cacheable: yes
+
+  - name: ansible facts
+    shell: ansible -m setup all -i hosts.ini --tree '{{ directory }}/ all'
+    args:
+      chdir: "{{ playbook_dir }}"
+
+  - name: run ansible-cmdb on Ansible facts output
+    shell: ansible-cmdb -t html_fancy_split -p local_js=1 '{{ directory }}/ all'
+    args:
+      chdir: "{{ playbook_dir }}"
+ 
+  - name: rename cmdb directory to cmdb-{{ directory }}
+    shell: mv cmdb 'cmdb-{{ directory }}'
+    args:
+      chdir: "{{ playbook_dir }}"
+
+  
+
+  
+
+
+    
+
+
+
+  

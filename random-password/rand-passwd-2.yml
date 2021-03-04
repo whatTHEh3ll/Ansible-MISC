@@ -1,0 +1,49 @@
+---
+
+- name: generate random password with mkpasswd
+  hosts: all
+  gather_facts: true
+    
+  tasks:
+
+  - name: register date and time
+    shell: date +"%m_%d_%Y_%r"
+    register: passwd_time
+    
+  - debug:
+      msg: passwd_time.stdout
+
+  - name: generate random password for new user with mkpasswd
+    shell:  mkpasswd --method=SHA-512 $(date +%s | sha384sum | md5sum | cut -f 1 -d ' ')
+    register: hash
+    
+  - debug:
+      msg: hash.stdout
+
+  - name: echo password variable
+    shell: echo $(date +%s | sha384sum | md5sum | cut -f 1 -d ' ')
+    register: my_password
+    
+  - debug:
+      msg: my_password.stdout
+
+  - name: create pass_vault.yml file
+    copy:
+      content: "Vault password:"
+      dest: "vars/pass_vault.yml"
+      force: yes 
+
+  - name: write password to file                                                                              
+    blockinfile:
+      dest: vars/pass_vault.yml
+      marker: "{{ passwd_time.stdout }}"
+      block: |                                                                                             
+        {{ my_password }}
+      insertafter: "Vault password:"
+      state: present 
+
+  - name: Remove blank lines blockinfile put in
+    lineinfile :
+      path: vars/pass_vault.yml
+      state: absent
+      regexp: '^$'

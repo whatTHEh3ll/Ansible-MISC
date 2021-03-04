@@ -1,0 +1,58 @@
+- name: create a directory with current time and run ansible-cmdb
+  hosts: localhost
+  gather_facts: true
+ 
+  tasks:
+
+  - name: register date and time
+    shell: date +"%m_%d_%Y_%r"
+    register: time
+
+  - debug:
+      msg: time.stdout
+
+  - debug:
+      msg: system-{{ ansible_hostname }}-{{ inventory_hostname }}-{{ time.stdout }}
+
+  - name: set fact for system-{{ ansible_hostname }}-{{ inventory_hostname }}-{{ time.stdout }}
+    set_fact:
+      directory: system-{{ ansible_hostname }}-{{ inventory_hostname }}-{{ time.stdout }}
+      cacheable: yes
+
+  - name: create {{ directory }} using custom fact
+    file:
+      path: "{{ playbook_dir }}/{{ directory }}"
+      state: directory
+      mode: 0755
+
+  - name: ansible facts
+    shell: ansible -m setup all -i hosts.ini 
+    args:
+      chdir: "{{ playbook_dir }}"
+    register: facts
+
+  - debug:
+      msg: "{{ facts.stdout }}"
+
+  - name: Creating a file with content
+    copy:
+      dest: "{{ playbook_dir }}/{{ directory }}/{{ directory }}-FACTS.json"
+      content: "{{ facts.stdout }}"
+      
+
+    
+
+  
+      
+
+  
+  
+
+  
+
+
+    
+
+
+
+  
